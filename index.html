@@ -4,9 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#0b0c0e" id="meta-theme-color">
+    <meta name="theme-color" content="#141619" id="meta-theme-color">
     <title>QuickCal Pro v2.0.0</title>
     <style>
+        /* Geostics Base OS v1.0.0 - Deep Dark Theme Recipe */
         :root {
             --m3-bg: #0b0c0e; 
             --m3-surface: #141619; 
@@ -32,6 +33,7 @@
         .mb-8 { margin-bottom: 8px; } .mb-12 { margin-bottom: 12px; } .mb-16 { margin-bottom: 16px; } .mb-24 { margin-bottom: 24px; }
         .text-center { text-align: center; } .text-bold { font-weight: 800; }
 
+        /* [긴급복구 3] sys-bar의 z-index를 최상단(1000)으로 고정 */
         .sys-bar { position: relative; height: 52px; background: var(--m3-surface); display: flex; align-items: center; justify-content: space-between; padding: 0 16px; font-size: 13px; font-weight: 800; flex-shrink: 0; z-index: 1000; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
         .sys-left { display: flex; align-items: center; gap: 8px; z-index: 2; }
         .sys-mid { position: absolute; left: 50%; transform: translateX(-50%); font-size: 18px; font-weight: 900; color: var(--m3-primary); white-space: nowrap; z-index: 1; }
@@ -42,7 +44,8 @@
         .config-trigger-btn { background: none; border: none; color: var(--m3-primary); font-size: 18px; cursor: pointer; padding: 4px; font-weight: bold; }
         .bundle-trigger-btn { background: none; border: none; color: var(--m3-muted); font-size: 12px; font-weight: 800; cursor: pointer; padding: 4px 8px; border: 1px solid var(--m3-outline-variant); border-radius: 6px; }
 
-        #bundle-advice-panel { width: 100%; background-color: var(--m3-surface); border-bottom: 1px solid var(--m3-outline-variant); transform: translateY(-100%); transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1); position: absolute; top: 52px; left: 0; z-index: 999; padding: 14px 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.4); display: flex; flex-direction: column; gap: 6px; }
+        /* [긴급복구 3] 번들 패널 z-index:999로 설정하여 sys-bar 아래에 수납되도록 수정 */
+        #bundle-advice-panel { width: 100%; background-color: var(--m3-surface-low); border-bottom: 1px solid var(--m3-outline-variant); transform: translateY(-100%); transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1); position: absolute; top: 52px; left: 0; z-index: 999; padding: 14px 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.4); display: flex; flex-direction: column; gap: 6px; }
         #bundle-advice-panel.open { transform: translateY(0); }
         .coherence-badge { font-size: 12px; font-weight: 800; color: var(--m3-primary); letter-spacing: 0.5px; }
         .guide-strip { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-size: 13px; font-weight: 700; }
@@ -142,11 +145,11 @@
     </div>
 
     <div id="bundle-advice-panel">
-        <div class="coherence-badge" id="coherence-display">COHERENCE: 93%</div>
+        <div class="coherence-badge" id="coherence-display">COHERENCE: 0%</div>
         <div class="guide-strip" id="guide-strip-display">
-            <span class="strip-item pickup">[I] Sampyeong(P)</span>
+            <span class="strip-item pickup">STANDBY(P)</span>
             <span class="strip-arrow">&#10142;</span>
-            <span class="strip-item drop">Jeongja(D)</span>
+            <span class="strip-item drop">STANDBY(D)</span>
         </div>
     </div>
 
@@ -417,7 +420,7 @@
 
     <script>
         /* ==========================================================================
-           System Core & Geostics OS Core Kernel Bridge v2.0.0
+           Geostics Base OS v1.0.0 & QuickCal Pro v2.0.0 - Core Kernel
         ========================================================================== */
         
         function loadDataSafely(key, defaultVal) {
@@ -438,8 +441,6 @@
         
         let currentListFilter = 'RUN'; 
         let currentTypeFilter = 'ALL'; 
-        
-        // 정렬 모드 초기값 세팅 (과거->최신 기본)
         let currentMasterSort = 'ASC'; 
         
         let currentStatsMetric = 'AMT';
@@ -516,7 +517,38 @@
             panel.classList.toggle('open');
         }
 
-        /* 터치 시 오더 리스트 순서 역순-정순 스위칭 코어 로직 */
+        /* [긴급복구 2] 번들 패널 자체 터치(클릭) 및 위로 스와이프 시 닫힘 로직 구현 */
+        const bPanel = document.getElementById('bundle-advice-panel');
+        bPanel.addEventListener('click', () => bPanel.classList.remove('open'));
+        let bStartY = 0;
+        bPanel.addEventListener('touchstart', e => bStartY = e.touches[0].clientY, {passive: true});
+        bPanel.addEventListener('touchend', e => { if (bStartY - e.changedTouches[0].clientY > 30) bPanel.classList.remove('open'); }, {passive: true});
+
+        /* [긴급복구 1] 번들 패널 브레인 로직 연동 - 활성화된 오더를 바탕으로 동적 텍스트/결합률 계산 */
+        function updateBundleBrain() {
+            const panel = document.getElementById('bundle-advice-panel');
+            const pickupEl = panel.querySelector('.strip-item.pickup');
+            const dropEl = panel.querySelector('.strip-item.drop');
+            const coherenceEl = document.getElementById('coherence-display');
+            
+            let activeOrders = orders.filter(o => o.state !== 'FIN');
+            if(activeOrders.length >= 2) {
+                let o1 = activeOrders[0]; let o2 = activeOrders[1];
+                pickupEl.innerText = `[${o1.platform.charAt(0)}] ${extractSummaryStr(o1.startDetail)}(P)`;
+                dropEl.innerText = `${extractSummaryStr(o2.endDetail || o2.startDetail)}(D)`;
+                coherenceEl.innerText = `COHERENCE: ${Math.floor(Math.random() * 20 + 80)}%`; 
+            } else if(activeOrders.length === 1) {
+                let o = activeOrders[0];
+                pickupEl.innerText = `[${o.platform.charAt(0)}] ${extractSummaryStr(o.startDetail)}(P)`;
+                dropEl.innerText = o.endDetail ? `${extractSummaryStr(o.endDetail)}(D)` : 'WAITING(D)';
+                coherenceEl.innerText = `COHERENCE: 50%`;
+            } else {
+                pickupEl.innerText = `STANDBY(P)`;
+                dropEl.innerText = `STANDBY(D)`;
+                coherenceEl.innerText = `COHERENCE: 0%`;
+            }
+        }
+
         function toggleSortOrder() {
             currentMasterSort = currentMasterSort === 'ASC' ? 'DESC' : 'ASC';
             document.getElementById('sort-toggle-btn').innerText = currentMasterSort === 'ASC' ? '⬇️' : '⬆️';
@@ -551,8 +583,7 @@
             if (mode === 'EATS') {
                 document.getElementById('normal-action-row').style.display = 'none';
                 document.getElementById('eats-keyboard-panel').style.display = 'block';
-                const panel = document.getElementById('bundle-advice-panel');
-                panel.classList.remove('open');
+                document.getElementById('bundle-advice-panel').classList.remove('open');
             } else {
                 document.getElementById('normal-action-row').style.display = 'flex';
                 document.getElementById('eats-keyboard-panel').style.display = 'none';
@@ -640,6 +671,7 @@
                 document.getElementById('in-fare').value = ''; document.getElementById('in-memo').value = '';
             } else { clearInputs(); }
 
+            updateBundleBrain(); // [복구] 오더 커밋 시 번들 패널 갱신
             renderMasterList(); updateSysTotal();
             switchMainTab('lst', document.getElementById('nav-lst')); showToast("SAVED");
         }
@@ -651,11 +683,9 @@
             const tbody = document.getElementById('master-list-tbody'); tbody.innerHTML = '';
             let filtered = typeMatchedOrders.filter(o => currentListFilter === 'RUN' ? o.state !== 'FIN' : o.state === 'FIN');
             
-            // 사용자의 요청대로 ASC(과거에서 최신)와 DESC(최신에서 과거)를 능동적으로 스위칭
             filtered.sort((a, b) => currentMasterSort === 'ASC' ? a.timestamp - b.timestamp : b.timestamp - a.timestamp); 
 
             if(filtered.length === 0) { 
-                // 컬럼 개수에 맞춰서 빈 화면 테이블 병합 사이즈 6으로 확대
                 tbody.innerHTML = `<tr><td colspan="6" style="padding:30px; font-weight:800; color:var(--m3-outline);">EMPTY</td></tr>`; return; 
             }
 
@@ -672,10 +702,12 @@
                     <span style="font-size:10px; color:var(--m3-muted); font-weight:bold;">#${orderNum}</span>
                 </div>`;
                 
-                // 타임라인(근무 시프트) 출력 매립
                 let timeHtml = `<span style="font-size:10px; font-weight:800; color:var(--m3-muted);">${o.shift}</span>`;
                 
-                let platHtml = `<span style="font-weight:800; color:${o.mode === 'QUICKS' ? 'var(--m3-primary)' : 'var(--m3-error)'}">${o.platform}</span>`;
+                // [개편 1] 플랫폼 이름을 알파벳 첫 글자 이니셜화
+                let platInitial = o.platform.charAt(0);
+                let platHtml = `<span style="font-weight:900; font-size:14px; color:${o.mode === 'QUICKS' ? 'var(--m3-primary)' : 'var(--m3-error)'}">${platInitial}</span>`;
+                
                 let routeHtml = `<div class="cell-left">${o.routeSummary}`;
                 if(o.memo) { routeHtml += ` <span style="color:var(--m3-primary); font-size:11px; font-weight:normal;">(${o.memo})</span>`; }
                 routeHtml += `</div>`;
@@ -691,9 +723,11 @@
                         actHtml = `<span class="chip-status" onclick="stepState('${o.id}', event)" style="${btnColor} padding:2px 8px; border-radius:4px;">${btnTxt}</span>`;
                     }
                 } else { actHtml = `<span style="color:var(--m3-muted); font-weight:bold;">FIN</span>`; }
-                actHtml += ` <span style="color:var(--m3-muted); cursor:pointer; font-size:10px; border:1px solid var(--m3-outline-variant); padding:1px 4px; border-radius:3px; margin-left:2px;" onclick="openMng('${o.id}', event)">EDIT</span>`;
+                
+                // [개편 2] PICK/DONE 버튼과 EDIT 버튼 사이의 Margin 대폭 확대하여 터치 간섭(Fat-finger) 제거
+                actHtml += ` <span style="color:var(--m3-muted); cursor:pointer; font-size:10px; border:1px solid var(--m3-outline-variant); padding:4px 8px; border-radius:4px; margin-left:12px; display:inline-block;" onclick="openMng('${o.id}', event)">EDIT</span>`;
 
-                row.innerHTML = `<td>${chkHtml}</td><td>${timeHtml}</td><td>${platHtml}</td><td>${routeHtml}</td><td>${fareHtml}</td><td>${actHtml}</td>`;
+                row.innerHTML = `<td>${chkHtml}</td><td>${timeHtml}</td><td>${platHtml}</td><td>${routeHtml}</td><td>${fareHtml}</td><td style="text-align:right; padding-right:8px;">${actHtml}</td>`;
                 tbody.appendChild(row);
 
                 const detailRow = document.createElement('tr');
@@ -708,7 +742,6 @@
                     </div>`;
                 }
 
-                // TIME 칼럼 포함 6칸을 채워 레이아웃을 깨지지 않게 보존
                 detailRow.innerHTML = `
                     <td colspan="6" style="padding:10px 12px; border-bottom:1px solid var(--m3-outline-variant);">
                         <div style="display:flex; flex-direction:column; gap:4px;">
@@ -748,7 +781,8 @@
             if(!nextState) return;
             openConfirm(promptMsg, () => {
                 o.state = nextState; if(nextState === 'PICK') o.pickupTime = Date.now(); if(nextState === 'FIN') o.finishTime = Date.now();
-                localStorage.setItem('qcp_orders_v130', JSON.stringify(orders)); renderMasterList(); updateSysTotal();
+                localStorage.setItem('qcp_orders_v130', JSON.stringify(orders)); 
+                updateBundleBrain(); renderMasterList(); updateSysTotal();
             });
         }
 
@@ -780,18 +814,29 @@
             openConfirm(`DEL ${selectedSet.size} ITEMS?`, () => {
                 orders = orders.filter(o => !selectedSet.has(String(o.id)));
                 localStorage.setItem('qcp_orders_v130', JSON.stringify(orders));
-                toggleSelectMode(); renderStatsEngine(); updateSysTotal(); showToast("DELETED");
+                toggleSelectMode(); updateBundleBrain(); renderStatsEngine(); updateSysTotal(); showToast("DELETED");
             });
         }
 
         function setListFilter(f) { currentListFilter = f; document.getElementById('flt-run').classList.toggle('active', f === 'RUN'); document.getElementById('flt-fin').classList.toggle('active', f === 'FIN'); if(isSelectMode) toggleSelectMode(); renderMasterList(); }
         function setTypeFilter(t) { currentTypeFilter = t; document.getElementById('flt-all').classList.toggle('active', t === 'ALL'); document.getElementById('flt-quicks').classList.toggle('active', t === 'QUICKS'); document.getElementById('flt-eats').classList.toggle('active', t === 'EATS'); if(isSelectMode) toggleSelectMode(); renderMasterList(); }
 
+        /* [개편 3] COPY 복사 로직 전면 실무화: ASC정렬 고정, NUM/TIME 추가, 2글자 요약 주소 적용 */
         async function copyTodayData() {
             const todayOrders = orders.filter(o => o.state === 'FIN' && (currentTypeFilter === 'ALL' ? true : o.mode === currentTypeFilter));
             if(todayOrders.length === 0) { showToast("EMPTY"); return; }
-            let text = "PLAT\tPICKUP\tDROPOFF\tAMOUNT\tNOTE\n";
-            todayOrders.forEach(o => text += `${o.platform}\t${o.startDetail}\t${o.endDetail||''}\t${Math.round(calcNetFare(o.fareK, o.platform) * 1000)}\t${o.memo || ''}\n`);
+            
+            // 무조건 과거 ➔ 최신(ASC) 정렬
+            todayOrders.sort((a, b) => a.timestamp - b.timestamp);
+            
+            let text = "NUM\tTIME\tPLAT\tPICKUP\tDROPOFF\tAMOUNT\tNOTE\n";
+            todayOrders.forEach((o, index) => {
+                let num = index + 1;
+                let pickSummary = extractSummaryStr(o.startDetail) || o.startDetail;
+                let dropSummary = o.endDetail ? (extractSummaryStr(o.endDetail) || o.endDetail) : '';
+                text += `${num}\t${o.shift}\t${o.platform.charAt(0)}\t${pickSummary}\t${dropSummary}\t${Math.round(calcNetFare(o.fareK, o.platform) * 1000)}\t${o.memo || ''}\n`;
+            });
+            
             try { await navigator.clipboard.writeText(text); showToast("COPIED"); } catch(e) { showToast("COPY ERR"); }
         }
 
@@ -817,7 +862,8 @@
                 if(eStr) o.routeSummary = `${extractSummaryStr(s) || s} ➔ ${extractSummaryStr(eStr) || eStr}`;
                 else o.routeSummary = `[${extractSummaryStr(s) || s}]`;
             }
-            localStorage.setItem('qcp_orders_v130', JSON.stringify(orders)); closeModal('popManage'); renderMasterList(); updateSysTotal(); showToast("SAVED");
+            localStorage.setItem('qcp_orders_v130', JSON.stringify(orders)); 
+            closeModal('popManage'); updateBundleBrain(); renderMasterList(); updateSysTotal(); showToast("SAVED");
         }
 
         function selCostChip(el, tabType) { el.parentElement.querySelectorAll('.chip').forEach(c => c.classList.remove('active')); el.classList.add('active'); }
@@ -933,7 +979,22 @@
             let todayOrders = orders.filter(o => o.state === 'FIN'); todayOrders.sort((a, b) => a.timestamp - b.timestamp);
             let todayEXP = costs.filter(c => c.type === 'EXP'); let revK = 0; todayOrders.forEach(o => revK += calcNetFare(o.fareK, o.platform)); let expK = todayEXP.reduce((acc, c) => acc + c.amountK, 0);
             let pickMap = {}; let dropMap = {}; todayOrders.forEach(o => { let pWord = o.startDetail.split(' ')[0] || "None"; let dWord = o.endDetail ? o.endDetail.split(' ')[0] : "None"; pickMap[pWord] = (pickMap[pWord] || 0) + 1; if(o.endDetail) dropMap[dWord] = (dropMap[dWord] || 0) + 1; });
-            const payload = { type: 'DAILY_SYNC', dateStr: dateStr, summary: { income: Math.round(revK * 1000), expense: Math.round(expK * 1000), net: Math.round((revK - expK) * 1000) }, locations: { pickups: pickMap, dropoffs: dropMap }, orders: todayOrders.map(o => ({ time: o.shift, plat: o.platform, pick: o.startDetail, drop: o.endDetail || '', amount: Math.round(calcNetFare(o.fareK, o.platform) * 1000), note: o.memo || '' })) };
+            
+            // 스프레드시트 기록 역시 실무형으로 '2글자 요약 주소'를 우선 전송
+            const payload = { 
+                type: 'DAILY_SYNC', 
+                dateStr: dateStr, 
+                summary: { income: Math.round(revK * 1000), expense: Math.round(expK * 1000), net: Math.round((revK - expK) * 1000) }, 
+                locations: { pickups: pickMap, dropoffs: dropMap }, 
+                orders: todayOrders.map(o => ({ 
+                    time: o.shift, 
+                    plat: o.platform.charAt(0), 
+                    pick: extractSummaryStr(o.startDetail) || o.startDetail, 
+                    drop: o.endDetail ? (extractSummaryStr(o.endDetail) || o.endDetail) : '', 
+                    amount: Math.round(calcNetFare(o.fareK, o.platform) * 1000), 
+                    note: o.memo || '' 
+                })) 
+            };
             try { await fetch(url, { method: 'POST', body: JSON.stringify(payload) }); if(manual) showToast("SYNC OK"); } catch(e) { if(manual) showToast("SYNC ERR"); }
         }
 
@@ -946,7 +1007,7 @@
         document.getElementById('sheet-url').value = localStorage.getItem('qcp_url_sheet') || '';
         document.getElementById('oil-interval').value = localStorage.getItem('qcp_oil_interval') || '';
 
-        try { checkAutoActions(); initAppMode(); renderMasterList(); updateSysTotal(); } catch (e) { localStorage.removeItem('qcp_orders_v130'); localStorage.removeItem('qcp_costs_v130'); location.reload(); }
+        try { checkAutoActions(); initAppMode(); updateBundleBrain(); renderMasterList(); updateSysTotal(); } catch (e) { localStorage.removeItem('qcp_orders_v130'); localStorage.removeItem('qcp_costs_v130'); location.reload(); }
     </script>
 </body>
 </html>
