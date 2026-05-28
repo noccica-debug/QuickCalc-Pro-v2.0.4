@@ -107,21 +107,26 @@
         .ch-w { left: 10px; top: 50%; transform: translateY(-50%); }
         .ch-e { right: 10px; top: 50%; transform: translateY(-50%); }
 
-        .radar-hud { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.85); border: 1px solid transparent; border-radius: 8px; font-size: 13px; font-weight: 900; padding: 8px 16px; z-index: 2000; white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.5); display: none; text-align: center; transition: all 0.2s ease; }
+        /* HUD & Controls */
+        .radar-hud { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.85); border: 2px solid transparent; border-radius: 12px; font-size: 14px; font-weight: 900; padding: 10px 18px; z-index: 2000; white-space: nowrap; box-shadow: 0 4px 16px rgba(0,0,0,0.5); display: none; text-align: center; transition: opacity 0.2s ease; cursor: pointer; }
         
-        /* GPS Current Location Badge */
-        .gps-badge { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.75); border: 1px solid rgba(255,255,255,0.15); border-radius: 12px; color: #fff; font-size: 13px; font-weight: 900; padding: 6px 14px; z-index: 2000; white-space: nowrap; box-shadow: 0 4px 16px rgba(0,0,0,0.4); backdrop-filter: blur(4px); display: none; text-align: center; }
-        .gps-road { font-size: 0.85em; color: #a1a1aa; font-weight: 700; margin-left: 6px; }
+        .gps-badge { position: absolute; top: 80px; left: 50%; transform: translateX(-50%); background: rgba(255,255,255,0.9); border-radius: 12px; color: #000; font-size: 13px; font-weight: 900; padding: 6px 14px; z-index: 2000; white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.4); display: none; text-align: center; }
+        .gps-road { font-size: 0.85em; color: #555; font-weight: 700; margin-left: 4px; }
 
+        .btn-gps { position: absolute; bottom: 30px; right: 16px; width: 44px; height: 44px; border-radius: 22px; background: rgba(30,30,30,0.9); border: 1px solid rgba(255,255,255,0.2); color: #fff; font-weight: 900; font-size: 12px; z-index: 2000; box-shadow: 0 4px 16px rgba(0,0,0,0.4); backdrop-filter: blur(4px); cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .btn-gps:active { background: #000; }
+
+        .quick-sel-container { position: absolute; bottom: 30px; left: 16px; display: flex; gap: 8px; z-index: 2000; overflow-x: auto; max-width: calc(100% - 80px); padding-bottom: 4px; }
+        .q-sel-btn { width: 40px; height: 40px; border-radius: 20px; border: 2px solid; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 15px; background: rgba(0,0,0,0.8); cursor: pointer; color: #fff; transition: all 0.2s; box-shadow: 0 4px 12px rgba(0,0,0,0.3); flex-shrink: 0; }
+        .q-sel-btn.active { background: currentColor; color: #000; transform: scale(1.1); }
+
+        /* Map Markers */
         .marker-dot { width: 14px !important; height: 14px !important; border-radius: 50% !important; border: 2px solid #fff !important; box-shadow: 0 0 8px rgba(0,0,0,0.8) !important; }
-        .marker-p { background: #007aff !important; }
-        .marker-d { background: #ff453a !important; }
         .marker-arrow { font-size: 20px; font-weight: 900; text-shadow: 0 0 4px #000; display: flex; justify-content: center; align-items: center; margin-top: -10px; margin-left: -10px; }
-
-        /* Blue Dot Pulse Marker */
+        
         .custom-pulse-icon { position: relative; display: flex; justify-content: center; align-items: center; width: 14px; height: 14px; }
-        .pulse-dot { width: 14px; height: 14px; background: #007aff; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 10px rgba(0,122,255,0.8); z-index: 2; position: absolute; top:0; left:0; }
-        .pulse-ring { border: 3px solid rgba(0,122,255,0.6); border-radius: 50%; height: 34px; width: 34px; position: absolute; left: -10px; top: -10px; animation: pulsate 1.5s ease-out infinite; opacity: 0; z-index: 1; }
+        .pulse-dot { width: 14px; height: 14px; background: #3498db; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 10px rgba(52,152,219,0.8); z-index: 2; position: absolute; top:0; left:0; }
+        .pulse-ring { border: 3px solid rgba(52,152,219,0.6); border-radius: 50%; height: 34px; width: 34px; position: absolute; left: -10px; top: -10px; animation: pulsate 1.5s ease-out infinite; z-index: 1; }
         @keyframes pulsate { 0% { transform: scale(0.3); opacity: 1; } 100% { transform: scale(1.2); opacity: 0; } }
 
         /* Modals & Nav */
@@ -229,8 +234,12 @@
                 <span class="ch-label ch-n">N</span><span class="ch-label ch-s">S</span>
                 <span class="ch-label ch-w">W</span><span class="ch-label ch-e">E</span>
             </div>
-            <div id="radar-hud" class="radar-hud">--</div>
-            <div id="gps-badge" class="gps-badge">📍 -- <span class="gps-road"></span></div>
+            <div id="radar-hud" class="radar-hud" onclick="GeosticsOS.toggleHUD()">--</div>
+            <div id="gps-badge" class="gps-badge">📍 <span id="gps-text"></span> <span class="gps-road" id="gps-road"></span></div>
+            
+            <button class="btn-gps" onclick="GeosticsOS.fetchManualGPS()">GPS</button>
+            <div id="radar-quick-sel" class="quick-sel-container"></div>
+            
             <div id="map"></div>
         </div>
     </div>
@@ -308,7 +317,7 @@
                     GeosticsOS.init(); 
                     if(GeosticsOS.map) {
                         GeosticsOS.map.invalidateSize(); 
-                        GeosticsOS.drawAllVectors(QuickCal.orders.filter(o => o.state === 'RUN')); 
+                        GeosticsOS.drawAllVectors(QuickCal.orders.filter(o => o.state === 'RUN' || o.state === 'PICK')); 
                     }
                 }, 300); 
             }
@@ -328,7 +337,7 @@
         const GeosticsOS = {
             map: null, routeVectors: [], currentRoute: null,
             seoulCenter: [37.5665, 126.9780], 
-            userMarker: null, watchId: null, lastGeoPos: null,
+            userMarker: null, selectedVectorId: null, hudVisible: true,
             
             init: function() {
                 if (this.map) return;
@@ -340,28 +349,46 @@
                 if (window.ResizeObserver) {
                     new ResizeObserver(() => { if (this.map) this.map.invalidateSize(); }).observe(document.getElementById('view-radar'));
                 }
+            },
 
-                // HTTPS Geolocation (FlyTo & Real-time Tracking)
+            toggleHUD: function() {
+                const hud = document.getElementById('radar-hud');
+                this.hudVisible = !this.hudVisible;
+                if(this.hudVisible) {
+                    hud.style.opacity = '1'; 
+                } else {
+                    hud.style.opacity = '0';
+                }
+            },
+
+            forceShowHUD: function() {
+                this.hudVisible = true;
+                const hud = document.getElementById('radar-hud');
+                hud.style.display = 'block';
+                // Trigger reflow to ensure animation
+                void hud.offsetWidth; 
+                hud.style.opacity = '1';
+            },
+
+            fetchManualGPS: function() {
                 if ("geolocation" in navigator) {
-                    let isFirstFix = true;
-                    this.watchId = navigator.geolocation.watchPosition(
+                    const badge = document.getElementById('gps-badge');
+                    document.getElementById('gps-text').innerText = "SEARCHING...";
+                    document.getElementById('gps-road').innerText = "";
+                    badge.style.display = 'block';
+
+                    navigator.geolocation.getCurrentPosition(
                         (position) => { 
                             const lat = position.coords.latitude; const lng = position.coords.longitude;
-                            if(isFirstFix) {
-                                this.map.flyTo([lat, lng], 13, { animate: true, duration: 1.5 });
-                                isFirstFix = false;
-                            }
+                            if(this.map) this.map.flyTo([lat, lng], 14, { animate: true, duration: 1.0 });
                             this.updateUserMarker(lat, lng);
-                            
-                            // 50m 이동 스로틀링: 불필요한 TMAP 역지오코딩 API 호출 과금 방지
-                            const dist = this.lastGeoPos ? this.map.distance([lat, lng], this.lastGeoPos) : 999;
-                            if (dist > 50) {
-                                this.reverseGeocode(lat, lng);
-                                this.lastGeoPos = [lat, lng];
-                            }
+                            this.reverseGeocode(lat, lng);
                         },
-                        (err) => { console.log("GPS Denied/Failed, keeping Seoul Center."); },
-                        { enableHighAccuracy: true, timeout: 5000, maximumAge: 1000 }
+                        (err) => { 
+                            document.getElementById('gps-text').innerText = "GPS ERROR"; 
+                            setTimeout(() => badge.style.display = 'none', 3000);
+                        },
+                        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
                     );
                 }
             },
@@ -387,8 +414,11 @@
                         const road = data.addressInfo.roadName || '';
                         const badge = document.getElementById('gps-badge');
                         if(dong) {
-                            badge.innerHTML = `📍 ${dong} <span class="gps-road">${road ? `(${road})` : ''}</span>`;
+                            document.getElementById('gps-text').innerText = dong;
+                            document.getElementById('gps-road').innerText = road ? `(${road})` : '';
                             badge.style.display = 'block';
+                            // 10초 후 자동 숨김 처리하여 시야 확보
+                            setTimeout(() => badge.style.display = 'none', 10000);
                         }
                     }
                 } catch (e) { console.log("RevGeo Err"); }
@@ -396,9 +426,10 @@
 
             resetRadar: function() {
                 this.currentRoute = null;
+                this.selectedVectorId = null;
                 this.clearVectors();
-                const hud = document.getElementById('radar-hud');
-                if(hud) hud.style.display = 'none';
+                document.getElementById('radar-hud').style.display = 'none';
+                document.getElementById('radar-quick-sel').innerHTML = '';
             },
 
             clearVectors: function() {
@@ -409,72 +440,121 @@
 
             storeRouteData: function(pLat, pLng, dLat, dLng, srtP, srtD, dist, time, hourly) {
                 this.currentRoute = { pLat, pLng, dLat, dLng, srtP, srtD, dist, time, hourly };
+                this.selectedVectorId = 'NEW';
             },
 
-            drawAllVectors: function(activeOrders) {
+            drawAllVectors: function(activeOrders, forceSelectId = null) {
                 if(!this.map) return;
                 this.clearVectors();
+                
+                const qSelContainer = document.getElementById('radar-quick-sel');
+                qSelContainer.innerHTML = '';
+                
+                let hasNew = !!this.currentRoute;
+                
+                if (forceSelectId) this.selectedVectorId = forceSelectId;
+                else if (!this.selectedVectorId) {
+                    if (hasNew) this.selectedVectorId = 'NEW';
+                    else if (activeOrders.length > 0) this.selectedVectorId = activeOrders[0].id;
+                }
 
-                // 1. RUN Orders (Blue & Semi-transparent)
-                activeOrders.forEach(o => {
+                let hudUpdated = false;
+
+                // 1. Render Active Orders (RUN = Blue, PICK = Green)
+                activeOrders.forEach((o, index) => {
                     if (o.startCoords && o.endCoords) {
+                        const isSelected = this.selectedVectorId === o.id;
+                        const stateTag = o.state === 'PICK' ? 'PICK' : 'RUN';
+                        const vColor = o.state === 'PICK' ? '#10b981' : '#007aff'; // Green for PICK, Blue for RUN
+                        const opac = isSelected ? 1.0 : 0.2;
+                        const w = isSelected ? 5 : 3;
+
+                        // Create Quick Selector Button
+                        const btn = document.createElement('div');
+                        btn.className = `q-sel-btn ${isSelected ? 'active' : ''}`;
+                        btn.style.borderColor = vColor;
+                        if(isSelected) { btn.style.backgroundColor = vColor; btn.style.color = '#000'; }
+                        else { btn.style.color = vColor; }
+                        btn.innerText = index + 1;
+                        btn.onclick = () => this.drawAllVectors(activeOrders, o.id);
+                        qSelContainer.appendChild(btn);
+
                         const { lat: pLat, lng: pLng } = o.startCoords;
                         const { lat: dLat, lng: dLng } = o.endCoords;
                         
-                        const polyline = L.polyline([[pLat, pLng], [dLat, dLng]], { color: '#007aff', weight: 3, opacity: 0.4, dashArray: '4, 4' }).addTo(this.map);
-                        // Touch Buffer Layer (Invisible but thick)
-                        const touchLine = L.polyline([[pLat, pLng], [dLat, dLng]], { color: 'transparent', weight: 20, opacity: 0 }).addTo(this.map);
-                        this.routeVectors.push(polyline, touchLine);
+                        const polyline = L.polyline([[pLat, pLng], [dLat, dLng]], { color: vColor, weight: w, opacity: opac, dashArray: isSelected ? '' : '4, 4' }).addTo(this.map);
+                        this.routeVectors.push(polyline);
                         
                         const bearing = this.calcBearing(pLat, pLng, dLat, dLng);
                         const midLat = (pLat + dLat) / 2; const midLng = (pLng + dLng) / 2;
-                        const arrowIcon = L.divIcon({ className: 'marker-arrow', iconSize: [20, 20], html: `<div style="transform: rotate(${bearing - 90}deg); color: #007aff; opacity: 0.5;">▶</div>` });
+                        const arrowIcon = L.divIcon({ className: 'marker-arrow', iconSize: [20, 20], html: `<div style="transform: rotate(${bearing - 90}deg); color: ${vColor}; opacity: ${opac};">▶</div>` });
                         const arrowMarker = L.marker([midLat, midLng], { icon: arrowIcon }).addTo(this.map);
                         this.routeVectors.push(arrowMarker);
 
-                        const clickHandler = () => {
+                        if(isSelected) {
                             let pSumm = o.routeSummary.split('➔')[0].replace('[','').replace(']','');
                             let dSumm = o.routeSummary.split('➔')[1] || '';
-                            this.updateHUD(pSumm, dSumm, o.dist, o.time, o.hourly, 'RUN');
-                        };
-                        touchLine.on('click', clickHandler);
-                        polyline.on('click', clickHandler);
+                            this.updateHUD(pSumm, dSumm, o.dist, o.time, o.hourly, stateTag, vColor);
+                            hudUpdated = true;
+                            if(forceSelectId) { this.forceShowHUD(); }
+                        }
                     }
                 });
 
-                // 2. NEW Search Order (Orange & Solid)
+                // 2. Render NEW Route (Orange)
                 if(this.currentRoute) {
+                    const isSelected = this.selectedVectorId === 'NEW';
+                    const vColor = '#f39c12';
+                    const opac = isSelected ? 1.0 : 0.2;
+                    const w = isSelected ? 5 : 3;
+
+                    const btn = document.createElement('div');
+                    btn.className = `q-sel-btn ${isSelected ? 'active' : ''}`;
+                    btn.style.borderColor = vColor;
+                    if(isSelected) { btn.style.backgroundColor = vColor; btn.style.color = '#000'; }
+                    else { btn.style.color = vColor; }
+                    btn.innerText = 'N';
+                    btn.onclick = () => this.drawAllVectors(activeOrders, 'NEW');
+                    // Add N button to the front
+                    qSelContainer.insertBefore(btn, qSelContainer.firstChild);
+
                     const { pLat, pLng, dLat, dLng, srtP, srtD, dist, time, hourly } = this.currentRoute;
-                    const pMarker = L.marker([pLat, pLng], { icon: L.divIcon({ className: 'marker-dot marker-p', iconSize: [14, 14] }) }).addTo(this.map);
-                    const dMarker = L.marker([dLat, dLng], { icon: L.divIcon({ className: 'marker-dot marker-d', iconSize: [14, 14] }) }).addTo(this.map);
                     
-                    const polyline = L.polyline([[pLat, pLng], [dLat, dLng]], { color: '#f39c12', weight: 4, opacity: 1.0, dashArray: '6, 6' }).addTo(this.map);
-                    // Touch Buffer Layer
-                    const touchLine = L.polyline([[pLat, pLng], [dLat, dLng]], { color: 'transparent', weight: 20, opacity: 0 }).addTo(this.map);
-                    this.routeVectors.push(pMarker, dMarker, polyline, touchLine);
+                    if (isSelected) {
+                        const pMarker = L.marker([pLat, pLng], { icon: L.divIcon({ className: 'marker-dot marker-p', iconSize: [14, 14] }) }).addTo(this.map);
+                        const dMarker = L.marker([dLat, dLng], { icon: L.divIcon({ className: 'marker-dot marker-d', iconSize: [14, 14] }) }).addTo(this.map);
+                        this.routeVectors.push(pMarker, dMarker);
+                    }
+                    
+                    const polyline = L.polyline([[pLat, pLng], [dLat, dLng]], { color: vColor, weight: w, opacity: opac, dashArray: isSelected ? '' : '6, 6' }).addTo(this.map);
+                    this.routeVectors.push(polyline);
 
                     const bearing = this.calcBearing(pLat, pLng, dLat, dLng);
                     const midLat = (pLat + dLat) / 2; const midLng = (pLng + dLng) / 2;
-                    const arrowIcon = L.divIcon({ className: 'marker-arrow', iconSize: [20, 20], html: `<div style="transform: rotate(${bearing - 90}deg); color: #f39c12;">▶</div>` });
+                    const arrowIcon = L.divIcon({ className: 'marker-arrow', iconSize: [20, 20], html: `<div style="transform: rotate(${bearing - 90}deg); color: ${vColor}; opacity: ${opac};">▶</div>` });
                     const arrowMarker = L.marker([midLat, midLng], { icon: arrowIcon }).addTo(this.map);
                     this.routeVectors.push(arrowMarker);
 
-                    const clickHandler = () => {
-                        this.updateHUD(srtP, srtD, dist, time, hourly, 'NEW');
-                    };
-                    touchLine.on('click', clickHandler);
-                    polyline.on('click', clickHandler);
+                    if(isSelected) {
+                        this.updateHUD(srtP, srtD, dist, time, hourly, 'NEW', vColor);
+                        hudUpdated = true;
+                        if(forceSelectId === 'NEW') { 
+                            this.forceShowHUD(); 
+                            this.map.fitBounds(polyline.getBounds(), { padding: [60, 60] });
+                        }
+                    }
+                }
 
-                    this.map.fitBounds(polyline.getBounds(), { padding: [60, 60] });
-                    // Default to showing NEW order on HUD
-                    clickHandler();
-                } else if(activeOrders.length > 0) {
-                    // Fallback to clear HUD if no new route but active routes exist
+                if(!hudUpdated) {
                     const hud = document.getElementById('radar-hud');
-                    hud.innerHTML = `TAP VECTOR TO VIEW`;
-                    hud.style.borderColor = `var(--m3-outline-variant)`;
-                    hud.style.color = `var(--m3-muted)`;
-                    hud.style.display = 'block';
+                    if (activeOrders.length === 0 && !hasNew) {
+                        hud.style.display = 'none';
+                    } else {
+                        hud.innerHTML = `SELECT VECTOR`;
+                        hud.style.borderColor = `var(--m3-outline-variant)`;
+                        hud.style.color = `var(--m3-muted)`;
+                        this.forceShowHUD();
+                    }
                 }
             },
 
@@ -486,16 +566,18 @@
                 return (toDeg(Math.atan2(y, x)) + 360) % 360;
             },
 
-            updateHUD: function(pName, dName, distKm, timeMin, effHourly, status) {
+            updateHUD: function(pName, dName, distKm, timeMin, effHourly, status, themeColor) {
                 const hud = document.getElementById('radar-hud');
                 if(!pName) { hud.style.display = 'none'; return; }
                 
-                const themeColor = status === 'NEW' ? '#f39c12' : '#007aff';
                 hud.style.borderColor = themeColor;
                 hud.style.color = themeColor;
                 
-                hud.innerHTML = `[${status}] ${pName} ➔ ${dName || '--'}<br><span style="color:#fff; font-size:11px;">${distKm.toFixed(1)}km | ${timeMin}min | ${effHourly}k/h (NET)</span>`;
-                hud.style.display = 'block';
+                hud.innerHTML = `[${status}] ${pName} ➔ ${dName || '--'}<br><span style="color:#fff; font-size:12px; font-weight:700;">${distKm.toFixed(1)}km | ${timeMin}min | ${effHourly}k/h (NET)</span>`;
+                if(this.hudVisible) {
+                    hud.style.display = 'block';
+                    hud.style.opacity = '1';
+                }
             }
         };
 
@@ -587,14 +669,14 @@
                 return clean.split(' ').pop().substring(0,2);
             },
 
-            searchTmapActive: async function() {
+            searchTmapActive: async function(isSilent = false) {
                 const apiKey = localStorage.getItem('qcp_key_tmap');
-                if(!apiKey) { showToast("TMAP KEY REQ"); return; }
+                if(!apiKey) { if(!isSilent) showToast("TMAP KEY REQ"); return false; }
                 let pickIn = document.getElementById('in-pick-quicks'); let dropIn = document.getElementById('in-drop-quicks');
                 
                 this.tempPick = null; this.tempDrop = null; this.tempDist = 0; this.tempTime = 0;
-                if(!pickIn.value.trim() && !dropIn.value.trim()) { showToast("NO INPUT"); return; }
-                showToast("SEARCHING...");
+                if(!pickIn.value.trim() && !dropIn.value.trim()) { if(!isSilent) showToast("NO INPUT"); return false; }
+                if(!isSilent) showToast("SEARCHING...");
 
                 const getPoiData = async (keyword) => {
                     try {
@@ -635,11 +717,13 @@
                     this.updateEffBadge();
                     GeosticsOS.storeRouteData(this.tempPick.lat, this.tempPick.lng, this.tempDrop.lat, this.tempDrop.lng, this.tempPick.srt, this.tempDrop.srt, this.tempDist, this.tempTime, this.getHourlyRate());
                     
-                    if(document.getElementById('view-radar').classList.contains('active')) {
-                        GeosticsOS.drawAllVectors(this.orders.filter(o => o.state === 'RUN'));
+                    if(!isSilent && document.getElementById('view-radar').classList.contains('active')) {
+                        GeosticsOS.drawAllVectors(this.orders.filter(o => o.state === 'RUN' || o.state === 'PICK'));
                     }
+                    if(!isSilent) showToast("SYNCED");
+                    return true;
                 }
-                showToast("SYNCED");
+                return false;
             },
 
             openRouteMapActive: function() {
@@ -672,13 +756,19 @@
                 GeosticsOS.resetRadar();
             },
 
-            commitOrder: function() {
+            commitOrder: async function() {
                 let startId = this.appMode === 'QUICKS' ? 'in-pick-quicks' : 'in-pick-eats';
                 let endId = this.appMode === 'QUICKS' ? 'in-drop-quicks' : 'in-drop-eats';
                 const fareK = parseFloat(document.getElementById('in-fare').value) || 0;
                 const startTxt = document.getElementById(startId).value.trim(); const endTxt = document.getElementById(endId).value.trim();
                 
                 if(!startTxt || !fareK) { showToast("ERR: INVALID"); return; }
+                
+                // AUTO-SEARCH Feature: If coordinates are missing but inputs exist, silent fetch before save
+                if (this.appMode === 'QUICKS' && ((startTxt && !this.tempPick) || (endTxt && !this.tempDrop))) {
+                    showToast("AUTO SEARCHING...");
+                    await this.searchTmapActive(true); // silent flag
+                }
                 
                 let pSumm = this.tempPick ? this.tempPick.srt : this.extractDong(startTxt);
                 let dSumm = this.tempDrop ? this.tempDrop.srt : this.extractDong(endTxt);
