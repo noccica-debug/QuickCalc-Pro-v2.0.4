@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#111315" id="meta-theme-color">
-    <title>QuickCal Pro (v2.0.1)</title>
+    <title>QuickCal Pro (v2.0.2)</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         /* M3 Based Color Palette */
@@ -96,9 +96,16 @@
         .tbl-route { font-weight: 800; color: var(--m3-surf-text); }
         .tbl-time { font-size: 10px; color: var(--m3-muted); margin-top: 4px; font-weight: 700; }
         .tbl-eff { font-size: 10px; color: var(--m3-primary); margin-top: 4px; font-weight: 800; }
+        .tbl-memo { font-size: 11px; font-weight: 700; color: #f39c12; margin-top: 4px; word-break: break-all; text-align: left; }
         .detail-row td { background: var(--m3-surface-low); text-align: left; padding: 12px; font-size: 12px; }
 
-        /* RADAR (Geostics Base OS 2.0.1) */
+        /* Fullscreen View Component */
+        .fullscreen-overlay { position: fixed; inset: 0; background: var(--m3-bg); z-index: 8000; overflow-y: auto; padding: 24px 16px; display: none; flex-direction: column; }
+        .fullscreen-overlay.show { display: flex; animation: viewSlideUp 0.25s ease-out; }
+        @keyframes viewSlideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .fs-card { background: var(--m3-surface); border: 1px solid var(--m3-outline-variant); border-radius: 16px; padding: 16px; margin-bottom: 12px; }
+
+        /* RADAR Layout Component */
         #view-radar { padding: 0; background: #030405; }
         #map { flex: 1; width: 100%; z-index: 1; background: #030405; position: relative; }
         
@@ -114,11 +121,13 @@
         /* HUD & Controls */
         .radar-hud { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.85); border: 2px solid transparent; border-radius: 12px; font-size: 14px; font-weight: 900; padding: 10px 18px; z-index: 2000; white-space: nowrap; box-shadow: 0 4px 16px rgba(0,0,0,0.5); display: none; text-align: center; transition: opacity 0.2s ease; cursor: pointer; }
         
-        .gps-badge { position: absolute; top: 80px; left: 50%; transform: translateX(-50%); background: rgba(255,255,255,0.9); border-radius: 12px; color: #000; font-size: 13px; font-weight: 900; padding: 6px 14px; z-index: 2000; white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.4); display: none; text-align: center; }
+        .gps-badge { position: absolute; top: 90px; left: 50%; transform: translateX(-50%); background: rgba(255,255,255,0.9); border-radius: 12px; color: #000; font-size: 13px; font-weight: 900; padding: 6px 14px; z-index: 2000; white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.4); display: none; text-align: center; }
         .gps-road { font-size: 0.85em; color: #555; font-weight: 700; margin-left: 4px; }
 
         .btn-gps { position: absolute; bottom: 30px; right: 16px; width: 44px; height: 44px; border-radius: 22px; background: rgba(30,30,30,0.9); border: 1px solid rgba(255,255,255,0.2); color: #fff; font-weight: 900; font-size: 12px; z-index: 2000; box-shadow: 0 4px 16px rgba(0,0,0,0.4); backdrop-filter: blur(4px); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
         .btn-gps:active { background: #000; }
+        
+        .btn-multi-navi { position: absolute; bottom: 84px; right: 16px; width: 44px; height: 44px; border-radius: 22px; background: #005cbb; border: 1px solid rgba(255,255,255,0.2); color: #fff; font-weight: 900; font-size: 9px; z-index: 2000; box-shadow: 0 4px 16px rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; text-align: center; cursor: pointer; }
 
         .quick-sel-container { position: absolute; bottom: 30px; left: 16px; display: flex; gap: 8px; z-index: 2000; overflow-x: auto; max-width: calc(100% - 80px); padding-bottom: 4px; }
         .q-sel-btn { width: 40px; height: 40px; border-radius: 20px; border: 2px solid; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 15px; background: rgba(0,0,0,0.8); cursor: pointer; color: #fff; transition: all 0.2s; box-shadow: 0 4px 12px rgba(0,0,0,0.3); flex-shrink: 0; }
@@ -126,7 +135,7 @@
 
         /* Map Markers */
         .marker-dot { width: 14px !important; height: 14px !important; border-radius: 50% !important; border: 2px solid #fff !important; box-shadow: 0 0 8px rgba(0,0,0,0.8) !important; }
-        .marker-arrow { font-size: 20px; font-weight: 900; text-shadow: 0 0 4px #000; display: flex; justify-content: center; align-items: center; margin-top: -10px; margin-left: -10px; }
+        .marker-arrow { display: flex; justify-content: center; align-items: center; z-index: 4000 !important; }
         
         .custom-pulse-icon { position: relative; display: flex; justify-content: center; align-items: center; width: 14px; height: 14px; }
         .pulse-dot { width: 14px; height: 14px; background: #3498db; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 10px rgba(52,152,219,0.8); z-index: 2; position: absolute; top:0; left:0; }
@@ -232,7 +241,7 @@
             </div>
             <div class="list-wrapper" style="background:var(--m3-surface); border-radius:12px; overflow:hidden; border:1px solid var(--m3-outline-variant);">
                 <table class="sheet-table">
-                    <thead><tr><th style="width:10%;">NO</th><th style="width:12%;">SHIFT</th><th style="width:20%;">PLAT</th><th style="width:33%;">ROUTE</th><th style="width:13%;">FARE</th><th style="width:12%;">ACT</th></tr></thead>
+                    <thead><tr><th style="width:10%;">NO</th><th style="width:18%;">SHIFT</th><th style="width:16%;">PLAT</th><th style="width:31%;">ROUTE</th><th style="width:13%;">FARE</th><th style="width:12%;">ACT</th></tr></thead>
                     <tbody id="master-list-tbody"></tbody>
                 </table>
             </div>
@@ -249,10 +258,19 @@
             <div id="gps-badge" class="gps-badge">📍 <span id="gps-text"></span> <span class="gps-road" id="gps-road"></span></div>
             
             <button class="btn-gps" onclick="GeosticsOS.fetchManualGPS()">GPS</button>
+            <button class="btn-multi-navi" onclick="GeosticsOS.calculateBundleRoute()">MULTI<br>NAVI</button>
             <div id="radar-quick-sel" class="quick-sel-container"></div>
             
             <div id="map"></div>
         </div>
+    </div>
+
+    <div id="fullscreen-overlay" class="fullscreen-overlay">
+        <div class="flex-between mb-24">
+            <div class="text-bold" style="font-size:20px; color:var(--m3-primary);">ORDER MANAGEMENT</div>
+            <button class="btn-icon btn-red" style="padding:0 16px; height:36px; border-radius:18px;" onclick="document.getElementById('fullscreen-overlay').classList.remove('show')">CLOSE</button>
+        </div>
+        <div id="fullscreen-overlay-content"></div>
     </div>
 
     <div class="nav-bar">
@@ -263,7 +281,7 @@
 
     <div class="modal-overlay" id="popSet" onclick="if(event.target===this) toggleModal('popSet')">
         <div class="modal-body">
-            <div class="sys-header">Geostics Base OS (v 2.0.1)</div>
+            <div class="sys-header">Geostics Base OS (v 2.0.2)</div>
             <div class="flex-between mb-16"><div class="text-bold" style="font-size:14px;">SETTINGS</div></div>
             <div class="flex-between mb-16">
                 <div class="text-bold" style="font-size:12px; color:var(--m3-muted);">KEEP SCREEN ON</div>
@@ -348,12 +366,15 @@
             map: null, routeVectors: [], currentRoute: null,
             seoulCenter: [37.5665, 126.9780], 
             userMarker: null, selectedVectorId: null, hudVisible: true,
-            
+            clickedDropoffs: [], clickedPolyline: null,
+
             init: function() {
                 if (this.map) return;
                 const bounds = L.latLngBounds([37.1, 126.5], [37.9, 127.5]);
                 this.map = L.map('map', { zoomControl: false, maxBounds: bounds, minZoom: 10, maxBoundsViscosity: 1.0 }).setView(this.seoulCenter, 12);
-                L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', { attribution: '' }).addTo(this.map);
+                
+                // Exchanged to Saturated Map Tile (CartoDB Voyager) for high visual recognition
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_labels_under/{z}/{x}/{y}{r}.png', { attribution: '' }).addTo(this.map);
                 this.map.attributionControl.setPrefix(false); 
 
                 if (window.ResizeObserver) {
@@ -391,9 +412,9 @@
                     navigator.geolocation.getCurrentPosition(
                         (position) => { 
                             const lat = position.coords.latitude; const lng = position.coords.longitude;
-                            if(this.map) this.map.flyTo([lat, lng], 14, { animate: true, duration: 1.0 });
                             this.updateUserMarker(lat, lng);
                             this.reverseGeocode(lat, lng);
+                            this.autofitActiveBounds(lat, lng);
                         },
                         (err) => { 
                             let msg = "ERROR";
@@ -404,6 +425,20 @@
                         },
                         { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
                     );
+                }
+            },
+
+            autofitActiveBounds: function(fallbackLat, fallbackLng) {
+                if(!this.map) return;
+                let activeLayers = [];
+                this.routeVectors.forEach(v => {
+                    if(v instanceof L.Polyline && !(v === this.clickedPolyline)) activeLayers.push(v);
+                });
+                if(activeLayers.length > 0) {
+                    const group = L.featureGroup(activeLayers);
+                    this.map.fitBounds(group.getBounds().pad(0.15));
+                } else {
+                    this.map.flyTo([fallbackLat, fallbackLng], 13);
                 }
             },
 
@@ -427,13 +462,17 @@
                     const data = await res.json();
                     if(data && data.addressInfo) {
                         const info = data.addressInfo;
-                        const dong = info.legalDong || info.adminDong || info.eup_myun || info.ri || info.city_do || '';
+                        const dong = info.legalDong || info.adminDong || info.eup_myun || info.ri || '';
                         const road = info.roadName || '';
                         const badge = document.getElementById('gps-badge');
                         
-                        if(dong) {
-                            document.getElementById('gps-text').innerText = dong;
-                            document.getElementById('gps-road').innerText = road ? `(${road})` : '';
+                        // Exclude City/Province string data (서울시/경기도 제외 처리)
+                        let cleanDong = dong.replace(/^(서울특별시|경기도|인천광역시|서울시|경기)/g, "").trim();
+                        let cleanRoad = road.replace(/^(서울특별시|경기도|인천광역시|서울시|경기)/g, "").trim();
+
+                        if(cleanDong) {
+                            document.getElementById('gps-text').innerText = cleanDong;
+                            document.getElementById('gps-road').innerText = cleanRoad ? `(${cleanRoad})` : '';
                             badge.style.display = 'block';
                             setTimeout(() => badge.style.display = 'none', 10000);
                         } else {
@@ -457,6 +496,7 @@
                 this.currentRoute = null;
                 this.selectedVectorId = null;
                 this.clearVectors();
+                this.resetClickedPath();
                 document.getElementById('radar-hud').style.display = 'none';
                 document.getElementById('radar-hud').innerHTML = '';
                 document.getElementById('radar-quick-sel').innerHTML = '';
@@ -491,34 +531,50 @@
                 let hudUpdated = false;
 
                 // 1. Render Active Orders (RUN = Blue, PICK = Green)
-                activeOrders.forEach((o, index) => {
+                activeOrders.forEach((o) => {
                     if (o.startCoords && o.endCoords) {
                         const isSelected = this.selectedVectorId === o.id;
                         const stateTag = o.state === 'PICK' ? 'PICK' : 'RUN';
                         const vColor = o.state === 'PICK' ? '#10b981' : '#007aff';
-                        const opac = isSelected ? 1.0 : 0.2;
-                        const w = isSelected ? 5 : 3;
+                        
+                        // Heightened Saturation/Opacity for Non-Selected Vectors (0.2 -> 0.55)
+                        const opac = isSelected ? 1.0 : 0.55;
+                        const w = isSelected ? 6 : 4;
 
                         const btn = document.createElement('div');
                         btn.className = `q-sel-btn ${isSelected ? 'active' : ''}`;
                         btn.style.borderColor = vColor;
                         if(isSelected) { btn.style.backgroundColor = vColor; btn.style.color = '#000'; }
                         else { btn.style.color = vColor; }
-                        btn.innerText = index + 1;
+                        
+                        // Sync Sequential Index matching the unique order identity layout
+                        btn.innerText = o.displayNo;
                         btn.onclick = () => this.drawAllVectors(activeOrders, o.id);
                         qSelContainer.appendChild(btn);
 
                         const { lat: pLat, lng: pLng } = o.startCoords;
                         const { lat: dLat, lng: dLng } = o.endCoords;
                         
-                        const polyline = L.polyline([[pLat, pLng], [dLat, dLng]], { color: vColor, weight: w, opacity: opac, dashArray: isSelected ? '' : '4, 4' }).addTo(this.map);
+                        const polyline = L.polyline([[pLat, pLng], [dLat, dLng]], { color: vColor, weight: w, opacity: opac, dashArray: isSelected ? '' : '3, 4' }).addTo(this.map);
                         this.routeVectors.push(polyline);
                         
+                        // Enlarged dynamic bearing indicator arrow hosting sequential numbering inside
                         const bearing = this.calcBearing(pLat, pLng, dLat, dLng);
                         const midLat = (pLat + dLat) / 2; const midLng = (pLng + dLng) / 2;
-                        const arrowIcon = L.divIcon({ className: 'marker-arrow', iconSize: [20, 20], html: `<div style="transform: rotate(${bearing - 90}deg); color: ${vColor}; opacity: ${opac};">▶</div>` });
+                        const arrowIcon = L.divIcon({ 
+                            className: 'marker-arrow', 
+                            iconSize: [32, 32], 
+                            html: `<div style="transform: rotate(${bearing - 90}deg); color: ${vColor}; opacity: ${opac}; font-size: 26px; display: flex; align-items: center; justify-content: center; position: relative;">
+                                ▶<span style="position: absolute; color: #fff; font-size: 11px; font-weight: 900; transform: rotate(${90 - bearing}deg); text-shadow: 1px 1px 2px #000;">${o.displayNo}</span>
+                            </div>` 
+                        });
                         const arrowMarker = L.marker([midLat, midLng], { icon: arrowIcon }).addTo(this.map);
                         this.routeVectors.push(arrowMarker);
+
+                        // Render distinctive dot at Dropoff point for interaction measurement
+                        const dropDot = L.circleMarker([dLat, dLng], { radius: 6, fillColor: '#ff3b30', color: '#ffffff', weight: 2, fillOpacity: isSelected ? 1.0 : 0.7 }).addTo(this.map);
+                        dropDot.on('click', () => this.handleDropoffChaining(o));
+                        this.routeVectors.push(dropDot);
 
                         if(isSelected) {
                             let pSumm = o.routeSummary.split('➔')[0].replace('[','').replace(']','');
@@ -534,8 +590,8 @@
                 if(this.currentRoute) {
                     const isSelected = this.selectedVectorId === 'NEW';
                     const vColor = '#f39c12';
-                    const opac = isSelected ? 1.0 : 0.2;
-                    const w = isSelected ? 5 : 3;
+                    const opac = isSelected ? 1.0 : 0.55;
+                    const w = isSelected ? 6 : 4;
 
                     const btn = document.createElement('div');
                     btn.className = `q-sel-btn ${isSelected ? 'active' : ''}`;
@@ -554,12 +610,18 @@
                         this.routeVectors.push(pMarker, dMarker);
                     }
                     
-                    const polyline = L.polyline([[pLat, pLng], [dLat, dLng]], { color: vColor, weight: w, opacity: opac, dashArray: isSelected ? '' : '6, 6' }).addTo(this.map);
+                    const polyline = L.polyline([[pLat, pLng], [dLat, dLng]], { color: vColor, weight: w, opacity: opac, dashArray: isSelected ? '' : '5, 5' }).addTo(this.map);
                     this.routeVectors.push(polyline);
 
                     const bearing = this.calcBearing(pLat, pLng, dLat, dLng);
                     const midLat = (pLat + dLat) / 2; const midLng = (pLng + dLng) / 2;
-                    const arrowIcon = L.divIcon({ className: 'marker-arrow', iconSize: [20, 20], html: `<div style="transform: rotate(${bearing - 90}deg); color: ${vColor}; opacity: ${opac};">▶</div>` });
+                    const arrowIcon = L.divIcon({ 
+                        className: 'marker-arrow', 
+                        iconSize: [32, 32], 
+                        html: `<div style="transform: rotate(${bearing - 90}deg); color: ${vColor}; opacity: ${opac}; font-size: 26px; display: flex; align-items: center; justify-content: center; position: relative;">
+                            ▶<span style="position: absolute; color: #fff; font-size: 11px; font-weight: 900; transform: rotate(${90 - bearing}deg); text-shadow: 1px 1px 2px #000;">N</span>
+                        </div>` 
+                    });
                     const arrowMarker = L.marker([midLat, midLng], { icon: arrowIcon }).addTo(this.map);
                     this.routeVectors.push(arrowMarker);
 
@@ -584,6 +646,100 @@
                         hud.style.color = `var(--m3-muted)`;
                         this.forceShowHUD();
                     }
+                }
+            },
+
+            handleDropoffChaining: function(order) {
+                if(!order.endCoords) return;
+                
+                // If GPS profile exists, connect user coordinate sequence to the destination 
+                if(this.userMarker && this.clickedDropoffs.length === 0) {
+                    const gpsLatLng = this.userMarker.getLatLng();
+                    this.clickedDropoffs.push({ label: 'GPS', lat: gpsLatLng.lat, lng: gpsLatLng.lng });
+                }
+
+                this.clickedDropoffs.push({ label: `D${order.displayNo}`, lat: order.endCoords.lat, lng: order.endCoords.lng });
+                this.renderChainedPath();
+            },
+
+            renderChainedPath: function() {
+                if(this.clickedPolyline && this.map) {
+                    this.map.removeLayer(this.clickedPolyline);
+                }
+                if(this.clickedDropoffs.length < 2) return;
+
+                const latLngs = this.clickedDropoffs.map(pt => [pt.lat, pt.lng]);
+                this.clickedPolyline = L.polyline(latLngs, { color: '#ff3b30', weight: 4, dashArray: '6, 8', opacity: 0.9 }).addTo(this.map);
+                
+                // Cumulative distance/time computation (Haversine formula approximation)
+                let totalMeters = 0;
+                for(let i = 0; i < latLngs.length - 1; i++) {
+                    totalMeters += this.map.distance(latLngs[i], latLngs[i+1]);
+                }
+                let totalDistKm = totalMeters / 1000;
+                let totalTimeMin = Math.round(totalDistKm * 2.2); // Saturated urban driving conversion ratio
+                if(totalTimeMin === 0) totalTimeMin = 1;
+
+                const chainLabels = this.clickedDropoffs.map(pt => pt.label).join('➔');
+                const hud = document.getElementById('radar-hud');
+                hud.innerHTML = `[CHAIN] ${chainLabels}<br><span style="color:#ff453a; font-size:12px; font-weight:800;">${totalDistKm.toFixed(1)}km | ${totalTimeMin}min</span>`;
+                this.forceShowHUD();
+            },
+
+            resetClickedPath: function() {
+                this.clickedDropoffs = [];
+                if(this.clickedPolyline && this.map) {
+                    this.map.removeLayer(this.clickedPolyline);
+                    this.clickedPolyline = null;
+                }
+            },
+
+            calculateBundleRoute: function() {
+                const active = QuickCal.orders.filter(o => o.state === 'RUN' || o.state === 'PICK');
+                const quicks = active.filter(o => o.mode === 'QUICKS' && o.startCoords && o.endCoords);
+                
+                if(quicks.length < 2) {
+                    showToast("NEED MULTI ORDERS"); return;
+                }
+
+                // Definition logic: complete all pickups first. Determine last pickup location anchor.
+                let lastPickOrder = quicks.find(o => o.state === 'PICK') || quicks[quicks.length - 1];
+                let anchorPt = lastPickOrder.startCoords;
+
+                // Greedy sequence sort evaluating distance parameters
+                let currentPt = anchorPt;
+                let remaining = [...quicks];
+                let optimizedRoute = [];
+
+                while(remaining.length > 0) {
+                    remaining.sort((a, b) => {
+                        let distA = Math.hypot(a.endCoords.lat - currentPt.lat, a.endCoords.lng - currentPt.lng);
+                        let distB = Math.hypot(b.endCoords.lat - currentPt.lat, b.endCoords.lng - currentPt.lng);
+                        return distA - distB;
+                    });
+                    let closest = remaining.shift();
+                    optimizedRoute.push(closest);
+                    currentPt = closest.endCoords;
+                }
+
+                // Sequential recommendations render formulation
+                let seqStr = optimizedRoute.map(o => o.displayNo).join('➔');
+                let totalFareK = quicks.reduce((sum, o) => sum + QuickCal.netFare(o.fareK, o.platform), 0);
+                let totalTimeMin = quicks.reduce((sum, o) => sum + (o.time || 12), 0);
+                let bundleHourly = ((totalFareK / totalTimeMin) * 60).toFixed(1);
+
+                let breakdownText = optimizedRoute.map(o => `D${o.displayNo}:${o.time || 10}m`).join(' | ');
+
+                const hud = document.getElementById('radar-hud');
+                hud.innerHTML = `[BUNDLE] ${seqStr}<br><span style="color:#2ecc71; font-size:12px; font-weight:800;">NET ${totalFareK.toFixed(1)}k | ${bundleHourly}k/h (${totalTimeMin}min)<br>${breakdownText}</span>`;
+                this.forceShowHUD();
+
+                // Trigger multi destinations link structure execution
+                if(optimizedRoute.length > 0) {
+                    let firstTarget = optimizedRoute[0];
+                    let tmapDeepLink = `tmap://route?startx=${anchorPt.lng}&starty=${anchorPt.lat}&destx=${firstTarget.endCoords.lng}&desty=${firstTarget.endCoords.lat}`;
+                    showToast(`LAUNCHING BUNDLE: ${seqStr}`);
+                    setTimeout(() => { window.location.href = tmapDeepLink; }, 1200);
                 }
             },
 
@@ -621,7 +777,6 @@
 
             init: function() {
                 this.orders = this.loadDataSafely('qcp_orders_v201', []);
-                // Legacy support: convert 'FIN' state to 'DONE'
                 this.orders.forEach(o => { if(o.state === 'FIN') o.state = 'DONE'; });
 
                 this.setAppMode('QUICKS'); this.updateSysTotal(); this.updateShiftBadge();
@@ -710,6 +865,12 @@
                 this.updateEffBadge(); 
             },
             
+            cleanRoadAddress: function(str) {
+                if(!str) return "";
+                // Filter and omit city/province elements for optimal screen layout (시도 명칭 생략 필터)
+                return str.replace(/^(서울특별시|경기도|인천광역시|강원도|충청북도|충청남도|전라북도|전라남도|경상북도|경상남도|제주특별자치도|세종특별자치시|서울시|경기|인천)\s+/, "").trim();
+            },
+
             extractDong: function(str) { 
                 let clean = str ? str.replace(/^(서울특별시|경기도|인천광역시|서울시|경기|서울|인천)\s+/, "").trim() : "";
                 const match = clean.match(/([가-힣]+[0-9]*[동읍면리])/); 
@@ -739,8 +900,21 @@
                     } catch(e) {} return null;
                 };
 
-                if(pickIn.value.trim()) { let pData = await getPoiData(pickIn.value.trim()); if(pData) { pickIn.value = pData.str; this.tempPick = {lat: pData.lat, lng: pData.lng, str: pData.str, srt: this.extractDong(pData.dong || pData.str)}; } }
-                if(dropIn.value.trim()) { let dData = await getPoiData(dropIn.value.trim()); if(dData) { dropIn.value = dData.str; this.tempDrop = {lat: dData.lat, lng: dData.lng, str: dData.str, srt: this.extractDong(dData.dong || dData.str)}; } }
+                // Filter out and clean up location parameters
+                if(pickIn.value.trim()) { 
+                    let pData = await getPoiData(pickIn.value.trim()); 
+                    if(pData) { 
+                        pickIn.value = this.cleanRoadAddress(pData.str); 
+                        this.tempPick = {lat: pData.lat, lng: pData.lng, str: pickIn.value, srt: this.extractDong(pData.dong || pData.str)}; 
+                    } 
+                }
+                if(dropIn.value.trim()) { 
+                    let dData = await getPoiData(dropIn.value.trim()); 
+                    if(dData) { 
+                        dropIn.value = this.cleanRoadAddress(dData.str); 
+                        this.tempDrop = {lat: dData.lat, lng: dData.lng, str: dropIn.value, srt: this.extractDong(dData.dong || dData.str)}; 
+                    } 
+                }
                 
                 if(this.tempPick && this.tempDrop) {
                     try {
@@ -812,10 +986,9 @@
                 
                 if(!startTxt || !fareK) { showToast("ERR: INVALID"); return; }
                 
-                // AUTO-SEARCH Feature
                 if (this.appMode === 'QUICKS' && ((startTxt && !this.tempPick) || (endTxt && !this.tempDrop))) {
                     showToast("SEARCHING...");
-                    await this.searchTmapActive(true); // silent
+                    await this.searchTmapActive(true);
                 }
                 
                 let pSumm = this.tempPick ? this.tempPick.srt : this.extractDong(startTxt);
@@ -879,42 +1052,82 @@
                     let actBtn = '';
                     if (o.state === 'RUN') actBtn = `<button class="btn-icon btn-blue" style="width:100%; height:26px;" onclick="QuickCal.stepState('${o.id}', 'PICK', event)">PICK</button>`;
                     else if (o.state === 'PICK') actBtn = `<button class="btn-icon btn-red" style="width:100%; height:26px;" onclick="QuickCal.stepState('${o.id}', 'DONE', event)">DONE</button>`;
-                    else actBtn = '<span class="chip-status" style="background:var(--m3-surface-low); color:var(--m3-muted);">DONE</span>';
+                    else actBtn = '<span class="chip-status" style="background:var(--m3-surface-low); color:var(--m3-muted); padding:2px 4px; font-size:10px; border-radius:4px;">DONE</span>';
                     
-                    if(o.mode === 'QUICKS') tr.setAttribute('onclick', `QuickCal.toggleDetail('${o.id}')`);
+                    // Bind Fullscreen Detailed Scroller Modal context execution
+                    tr.setAttribute('onclick', `QuickCal.triggerFullscreenView('${o.id}')`);
                     
                     let badgeHTML = '';
                     if (this.currentFilter === 'DONE' && this.currentSubFilter === 'ALL') {
                         badgeHTML = o.mode === 'QUICKS' ? `<span class="badge-q">Q</span>` : `<span class="badge-e">E</span>`;
                     }
 
+                    // Always show memo text beneath structural metadata summary rows
+                    let memoRender = o.memo ? `<div class="tbl-memo">📝 ${o.memo}</div>` : '';
+
                     tr.innerHTML = `
-                    <td>${o.displayNo}</td><td>${o.shift}</td>
-                    <td>${badgeHTML}${o.platform}<br><button class="btn-icon" style="display:inline-block; margin-top:4px; padding:2px 6px; font-size:9px; height:20px;" onclick="QuickCal.openEditModal('${o.id}', event)">EDIT</button></td>
+                    <td>${o.displayNo}</td>
+                    <td>
+                        <span style="font-weight:800;">${o.shift}</span>
+                        <br><button class="btn-icon" style="display:inline-block; margin-top:6px; padding:2px 4px; font-size:9px; height:20px;" onclick="QuickCal.openEditModal('${o.id}', event)">EDIT</button>
+                    </td>
+                    <td>${badgeHTML}${o.platform}</td>
                     <td style="text-align:left;">
                         <div class="tbl-route">${o.routeSummary}</div>
                         <div class="tbl-time">${timeStr}</div>
+                        ${memoRender}
                     </td>
                     <td><span style="font-weight:900;">${this.calcNetFare(o.fareK, o.platform).toFixed(1)}k</span>${effStr}</td>
                     <td>${actBtn}</td>`;
                     tbody.appendChild(tr);
-
-                    if(o.mode === 'QUICKS') {
-                        const dTr = document.createElement('tr'); dTr.id = `detail-${o.id}`; dTr.className = 'detail-row'; dTr.style.display = 'none';
-                        dTr.innerHTML = `<td colspan="6">
-                            <div class="flex-between mb-8"><span><strong style="color:var(--m3-primary)">P:</strong> ${o.startDetail}</span><a href="tmap://search?name=${encodeURIComponent(o.startDetail)}" class="btn-tmap" onclick="event.stopPropagation()">TMAP</a></div>
-                            <div class="flex-between"><span><strong style="color:var(--m3-error)">D:</strong> ${o.endDetail}</span><a href="tmap://search?name=${encodeURIComponent(o.endDetail)}" class="btn-tmap" onclick="event.stopPropagation()">TMAP</a></div>
-                        </td>`;
-                        tbody.appendChild(dTr);
-                    }
                 });
             },
 
-            toggleDetail: function(id) { const el = document.getElementById(`detail-${id}`); if(el) el.style.display = el.style.display === 'none' ? 'table-row' : 'none'; },
+            triggerFullscreenView: function(id) {
+                const o = this.orders.find(x => x.id === id); if(!o) return;
+                const overlay = document.getElementById('fullscreen-overlay');
+                const content = document.getElementById('fullscreen-overlay-content');
+                
+                let netRevenueVal = this.calcNetFare(o.fareK, o.platform).toFixed(1);
+                let speedMetrics = (o.dist && o.time) ? `${o.hourly} k/h (${o.dist.toFixed(1)}km | ${o.time}min)` : 'N/A';
+
+                content.innerHTML = `
+                    <div class="fs-card">
+                        <div style="font-size:12px; text-transform:uppercase; color:var(--m3-primary); font-weight:800; margin-bottom:4px;">Core Reference</div>
+                        <div style="font-size:18px; font-weight:900; margin-bottom:8px;">[NO. ${o.displayNo}] ${o.platform} (${o.mode})</div>
+                        <div style="font-size:13px; font-weight:700; color:var(--m3-muted);">Shift Segment Period: ${o.shift}</div>
+                    </div>
+                    <div class="fs-card">
+                        <div style="font-size:12px; text-transform:uppercase; color:var(--m3-primary); font-weight:800; margin-bottom:8px;">Routing Path Specifics</div>
+                        <div style="margin-bottom:10px; font-size:14px; font-weight:700;"><strong style="color:var(--m3-primary)">PICKUP:</strong> ${o.startDetail}</div>
+                        <div style="margin-bottom:10px; font-size:14px; font-weight:700;"><strong style="color:var(--m3-error)">DROPOFF:</strong> ${o.endDetail || 'N/A'}</div>
+                        <div style="margin-top:12px; display:flex; gap:8px;">
+                            <a href="tmap://search?name=${encodeURIComponent(o.startDetail)}" class="btn-core flex-center" style="text-decoration:none; height:36px; font-size:12px; background:#000; color:#fff;">PICK TMAP</a>
+                            <a href="tmap://search?name=${encodeURIComponent(o.endDetail || o.startDetail)}" class="btn-core flex-center" style="text-decoration:none; height:36px; font-size:12px; background:#000; color:#fff;">DROP TMAP</a>
+                        </div>
+                    </div>
+                    <div class="fs-card">
+                        <div style="font-size:12px; text-transform:uppercase; color:var(--m3-primary); font-weight:800; margin-bottom:8px;">Financials & Efficiency</div>
+                        <div style="font-size:16px; font-weight:900; color:var(--m3-surf-text); margin-bottom:4px;">NET FARE: ${netRevenueVal}k <span style="font-size:12px; color:var(--m3-muted); font-weight:700;">(Gross: ${o.fareK}k)</span></div>
+                        <div style="font-size:13px; font-weight:700; color:var(--m3-primary);">Velocity Index: ${speedMetrics}</div>
+                    </div>
+                    <div class="fs-card">
+                        <div style="font-size:12px; text-transform:uppercase; color:var(--m3-primary); font-weight:800; margin-bottom:4px;">Memo Comments</div>
+                        <div style="font-size:14px; font-weight:800; color:#f39c12;">${o.memo || 'NO MEMO DATA RECORDED'}</div>
+                    </div>
+                `;
+                overlay.classList.add('show');
+            },
 
             stepState: function(id, nextState, e) { 
                 e.stopPropagation(); 
                 const o = this.orders.find(x => x.id === id); if(!o) return; 
+                
+                // Simple concise confirmation dialog for QUICKS operation tracking
+                if(o.mode === 'QUICKS') {
+                    if(!confirm(`Proceed to ${nextState}?`)) return;
+                }
+
                 o.state = nextState; 
                 if (nextState === 'PICK') o.pTime = getNowTimeString();
                 if (nextState === 'DONE') o.fTime = getNowTimeString();
