@@ -7,7 +7,45 @@
     <meta name="theme-color" content="#111315" id="meta-theme-color">
     <title>QuickCalc Pro (v2.0.7)</title>
     
-    <script src="database.js"></script>
+    <script>
+        // database.js : QuickCalc Pro v2.0.7 Core POI Database
+        const SUBWAY_DATA = [
+          {"name":"서울","lat":37.55315,"lng":126.972533}, {"name":"시청","lat":37.56359,"lng":126.975407},
+          {"name":"종각","lat":37.570203,"lng":126.983116}, {"name":"종로3가","lat":37.570429,"lng":126.992095},
+          {"name":"동대문","lat":37.57179,"lng":127.011383}, {"name":"청량리","lat":37.580148,"lng":127.045063},
+          {"name":"왕십리","lat":37.561159,"lng":127.035505}, {"name":"성수","lat":37.544628,"lng":127.055983},
+          {"name":"건대입구","lat":37.540408,"lng":127.069231}, {"name":"잠실","lat":37.513305,"lng":127.100129},
+          {"name":"삼성","lat":37.508827,"lng":127.063203}, {"name":"선릉","lat":37.504257,"lng":127.048174},
+          {"name":"강남","lat":37.497958,"lng":127.027539}, {"name":"교대","lat":37.493957,"lng":127.014631},
+          {"name":"사당","lat":37.476536,"lng":126.981631}, {"name":"서울대입구","lat":37.481233,"lng":126.952745},
+          {"name":"신림","lat":37.484216,"lng":126.929573}, {"name":"구로디지털단지","lat":37.485005,"lng":126.902626},
+          {"name":"신도림","lat":37.508815,"lng":126.891222}, {"name":"영등포구청","lat":37.525766,"lng":126.896627},
+          {"name":"당산","lat":37.533877,"lng":126.902011}, {"name":"합정","lat":37.550025,"lng":126.914557},
+          {"name":"홍대입구","lat":37.556748,"lng":126.923643}, {"name":"신촌","lat":37.555153,"lng":126.93689},
+          {"name":"연신내","lat":37.618855,"lng":126.920859}, {"name":"압구정","lat":37.526169,"lng":127.028502},
+          {"name":"고속터미널","lat":37.504953,"lng":127.004916}, {"name":"양재","lat":37.48466,"lng":127.03513},
+          {"name":"수서","lat":37.487507,"lng":127.101324}, {"name":"노원","lat":37.656274,"lng":127.063183},
+          {"name":"미아사거리","lat":37.613276,"lng":127.030083}, {"name":"명동","lat":37.561055,"lng":126.988271},
+          {"name":"용산","lat":37.529849,"lng":126.964561}, {"name":"김포공항","lat":37.56217,"lng":126.801273},
+          {"name":"여의도","lat":37.521578,"lng":126.924318}, {"name":"공덕","lat":37.544005,"lng":126.951058},
+          {"name":"광화문","lat":37.570545,"lng":126.976568}, {"name":"천호","lat":37.538397,"lng":127.123532},
+          {"name":"디지털미디어시티","lat":37.577005,"lng":126.898643}, {"name":"이태원","lat":37.534485,"lng":126.994369},
+          {"name":"가산디지털단지","lat":37.480376,"lng":126.882704}
+        ];
+
+        const SHOPPING_DATA = [
+          { "name": "신세계 강남", "lat": 37.5042, "lng": 127.0048 }, { "name": "현대 무역센터", "lat": 37.5095, "lng": 127.0605 },
+          { "name": "갤러리아 명품관", "lat": 37.5283, "lng": 127.0374 }, { "name": "코엑스몰", "lat": 37.5115, "lng": 127.0595 },
+          { "name": "롯데 잠실", "lat": 37.5117, "lng": 127.0984 }, { "name": "롯데월드몰", "lat": 37.5134, "lng": 127.1033 },
+          { "name": "가든파이브", "lat": 37.4776, "lng": 127.1249 }, { "name": "신세계 명동", "lat": 37.5609, "lng": 126.9806 },
+          { "name": "롯데 본점", "lat": 37.5648, "lng": 126.9817 }, { "name": "더현대 서울", "lat": 37.5258, "lng": 126.9284 },
+          { "name": "IFC몰", "lat": 37.5255, "lng": 126.9255 }, { "name": "신세계 영등포", "lat": 37.5170, "lng": 126.9042 },
+          { "name": "아이파크몰 용산", "lat": 37.5296, "lng": 126.9655 }, { "name": "현대 신촌", "lat": 37.5559, "lng": 126.9358 },
+          { "name": "현대 판교", "lat": 37.3927, "lng": 127.1126 }, { "name": "롯데 분당", "lat": 37.3846, "lng": 127.1235 },
+          { "name": "스타필드 하남", "lat": 37.5455, "lng": 127.2238 }, { "name": "스타필드 고양", "lat": 37.6468, "lng": 126.8953 }
+        ];
+    </script>
+    
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
     <style>
@@ -303,8 +341,8 @@
             <button class="btn-radar-float btn-gps" onclick="GeosticsOS.fetchManualGPS()">GPS</button>
             
             <div class="poi-container" id="poi-btn-group">
-                <button class="btn-poi" onclick="GeosticsOS.searchNearestPOI('SUBWAY')" title="지하철 탐색">🚇</button>
-                <button class="btn-poi" onclick="GeosticsOS.searchNearestPOI('MALL')" title="대형상업시설 탐색">🏢</button>
+                <button class="btn-poi" onclick="GeosticsOS.searchNearestPOI('SUBWAY')" title="SEARCH SUBWAY">🚇</button>
+                <button class="btn-poi" onclick="GeosticsOS.searchNearestPOI('MALL')" title="SEARCH MALL">🏢</button>
             </div>
 
             <div id="radar-quick-sel" class="quick-sel-container"></div>
@@ -576,7 +614,7 @@
 
             // Update 6: 3km 반경 POI 스캔 알고리즘
             searchNearestPOI: function(type) {
-                if (!this.userMarker) { SystemModal.alert("GPS 로케이션이 갱신되지 않았습니다."); return; }
+                if (!this.userMarker) { SystemModal.alert("GPS NOT READY."); return; }
                 const currentLat = this.userMarker.getLatLng().lat;
                 const currentLng = this.userMarker.getLatLng().lng;
                 
@@ -584,7 +622,7 @@
                 if(type === 'SUBWAY' && typeof SUBWAY_DATA !== 'undefined') targetData = SUBWAY_DATA;
                 if(type === 'MALL' && typeof SHOPPING_DATA !== 'undefined') targetData = SHOPPING_DATA;
 
-                if (targetData.length === 0) { showToast("데이터베이스 오류"); return; }
+                if (targetData.length === 0) { showToast("DB ERROR"); return; }
 
                 let minD = Infinity; let nearest = null;
                 targetData.forEach(item => {
@@ -593,9 +631,9 @@
                 });
 
                 if (minD <= 3.0 && nearest) {
-                    SystemModal.alert(`[${type}] 반경 3km 내 최단 거점\n\n📌 ${nearest.name}\n거리: ${minD.toFixed(1)} km`);
+                    SystemModal.alert(`[${type}] NEAREST IN 3KM\n\n📌 ${nearest.name}\nDIST: ${minD.toFixed(1)} km`);
                 } else {
-                    showToast("반경 3km 내 거점 없음");
+                    showToast("NO POI WITHIN 3KM");
                 }
             },
 
@@ -613,7 +651,7 @@
                 btn.classList.add('active');
                 let history = QuickCalc.loadDataSafely('qcp_hex_history', []);
                 if(history.length === 0) { 
-                    showToast("누적 데이터가 없습니다."); 
+                    showToast("NO LOG DATA"); 
                     this.isHeatmapOn = false; btn.classList.remove('active');
                     return; 
                 }
@@ -622,7 +660,7 @@
                     radius: 12, fillColor: '#ff3b30', color: 'transparent', fillOpacity: 0.25
                 }));
                 this.heatmapLayer = L.layerGroup(circles).addTo(this.map);
-                showToast(`히트맵 로드: ${history.length}건`);
+                showToast(`HEATMAP LOADED: ${history.length}`);
             },
 
             autofitActiveBounds: function(fallbackLat, fallbackLng) {
@@ -941,7 +979,7 @@
 
             // Update 4: 카카오 멀티 내비 URL Scheme 실행
             launchKakaoMultiNavi: function() {
-                if(this.lastGreedySeq.length === 0) { SystemModal.alert("하차지 시퀀스가 존재하지 않습니다."); return; }
+                if(this.lastGreedySeq.length === 0) { SystemModal.alert("NO DROPOFF SEQUENCE."); return; }
                 
                 let spLat = this.userMarker ? this.userMarker.getLatLng().lat : this.lastGreedySeq[0][0];
                 let spLng = this.userMarker ? this.userMarker.getLatLng().lng : this.lastGreedySeq[0][1];
@@ -960,7 +998,7 @@
                 }
                 
                 window.location.href = url;
-                showToast("카카오맵 실행 중");
+                showToast("LAUNCHING KAKAO MAP");
             },
 
             editBundleTimer: function() {
@@ -1562,7 +1600,7 @@
 
                 const url = localStorage.getItem('qcp_url_sync'); if (!url) {
                     this.orders = []; this.safeSetStorage('qcp_orders_v203', JSON.stringify(this.orders)); this.safeSetStorage('qcp_bundle_logs_v203', JSON.stringify([])); 
-                    this.renderMasterList(); this.updateSysTotal(); showToast("로컬 초기화 (SYNC 미설정)");
+                    this.renderMasterList(); this.updateSysTotal(); showToast("LOCAL RESET (NO SYNC)");
                     return;
                 }
                 
